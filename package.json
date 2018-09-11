@@ -1,0 +1,23 @@
+{
+  "name": "rating-engine",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SocialAutoTransport/rating-engine-test.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/SocialAutoTransport/rating-engine-test/issues"
+  },
+  "dependencies": {
+    "bluebird": "^3.5.2",
+    "mysql2": "^1.6.1",
+    "sequelize": "^4.38.0"
+  }
+}
