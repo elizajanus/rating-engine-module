@@ -2,7 +2,7 @@ const { Customer, Location, Lane, RateRule, RateOutput, sequelize } = require('.
 
 
 const RatingEngine = 
-async function getRateRules(message, customer_id, distance_traveled) {
+async function getRateRules(message, customer_id, distance_traveled, callback) {
   try {
     console.log(`1. Get origin_id by address: ${message.p_job_address}`);
     let promise = new Promise((resolve, reject) => { 
@@ -85,7 +85,7 @@ async function getRateRules(message, customer_id, distance_traveled) {
     });
 
     console.log(`6. Get lane by origin: ${origin_id} and destination: ${destination_id}`);
-        let promise2 = new Promise((resolve) => {   
+        let promise2 = new Promise((resolve, reject) => {   
             Lane.findOne({ where: {origin_location_id: origin_id, destination_location_id: destination_id} })
         .then(res => {
                 if (res != null) {
@@ -105,7 +105,7 @@ async function getRateRules(message, customer_id, distance_traveled) {
     });
     
     console.log(`7. Get rate rule by rated distance: ${ratedDistance}`);
-    let promise3 = new Promise((resolve) => {
+    let promise3 = new Promise((resolve, reject) => {
         let rDistance = ratedDistance * 1609.344;
         sequelize.query(`SELECT * FROM rate_rule WHERE customer_id = ${customer_id} AND distance_start <= ${rDistance} AND distance_end >= ${rDistance} LIMIT 1`)
         .then(res => {
