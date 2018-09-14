@@ -122,6 +122,7 @@ async function getRateRules(message, customer_id, distance_traveled, callback) {
     let price = await getPrice(rule.type, rule.rate, ratedDistance, function(err) {
         console.log(err);
     });
+    price = await Number.parseFloat(price).toFixed(2);
     console.log(`   Price: $${price}`);
   
     console.log(`9. Creating the rating output record.`);
