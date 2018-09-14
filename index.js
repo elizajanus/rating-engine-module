@@ -1,6 +1,5 @@
 const { Customer, Location, Lane, RateRule, RateOutput, sequelize } = require('./sequelize');
 
-
 const RatingEngine = 
 async function getRateRules(message, customer_id, distance_traveled, callback) {
   try {
