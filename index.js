@@ -4,7 +4,7 @@ const { Customer, Location, Lane, RateRule, RateOutput, sequelize } = require('.
 const RatingEngine = 
 async function getRateRules(message, customer_id, distance_traveled) {
   try {
-    console.log(`1. Get origin_id by address: ${message.p_job_address}`)
+    console.log(`1. Get origin_id by address: ${message.p_job_address}`);
     let promise = new Promise((resolve, reject) => { 
         const p_address = message.p_job_address.slice(0, 24);
         console.log(p_address);
@@ -19,20 +19,20 @@ async function getRateRules(message, customer_id, distance_traveled) {
         })
         .then(res => {
             console.log(res);
-                console.log(`   Found ${res.name}`)
+                console.log(`   Found ${res.name}`);
                 resolve(res.location_id);
         }).catch(err => {
             console.log(err);
+            reject(err);
         });
     });
 
     const origin_id = await promise;
     console.log(origin_id);
 
-
-    console.log(`2. Get destination_id by address: ${message.d_job_address}`)
-    let promise1 = new Promise((resolve) => {  
-        const d_address = message.d_job_address.slice(0, 24)
+    console.log(`2. Get destination_id by address: ${message.d_job_address}`);
+    let promise1 = new Promise((resolve, reject) => {  
+        const d_address = message.d_job_address.slice(0, 24);
         Location.findOne({
             where: {
                address: {
@@ -45,77 +45,87 @@ async function getRateRules(message, customer_id, distance_traveled) {
     .then(res => {
         if (res != null) {
             console.log(res);
-            console.log(`   Found ${res.name}`)
-            resolve(res.location_id)
+            console.log(`   Found ${res.name}`);
+            resolve(res.location_id);
         }
+    }).catch(err => {
+        console.log(err);
+        reject(err);
     });
 });
 
     const destination_id = await promise1;
  
-
-    console.log(`3. Get customer by id: ${customer_id}`)
+    console.log(`3. Log customer by id: ${customer_id}`);
     await Customer.findById(customer_id)
-    .then(x => {
-        if (x != null) {
-            console.log(`   Found ${x.name}`)
-            customer = x
+    .then(res => {
+        if (res != null) {
+            console.log(`   Found ${res.name}`);
+        } else if (err) {
+            console.log(err);
         }
     });
-    console.log(`4. Get origin location by id: ${origin_id}`)
+    console.log(`4. Log origin location by id: ${origin_id}`);
         await Location.findById(origin_id)
         .then(res => {
             if (res != null) {
-                console.log(`   Found ${res.name}`)
-                origin = res
+                console.log(`   Found ${res.name}`);
+            } else if (err) {
+                console.log(err);
             }
         });
-    
-    console.log(`5. Get destination location by id: ${destination_id}`)
+    console.log(`5. Log destination location by id: ${destination_id}`);
     await Location.findById(destination_id)
-    .then(x => {
-        if (x != null) {
-            console.log(`   Found ${x.name}`)
-            destination = x
+    .then(res => {
+        if (res != null) {
+            console.log(`   Found ${res.name}`);
+        } else if (err) {
+            console.log(err);
         }
     });
 
-    console.log(`6. Get lane by origin: ${origin_id} and destination: ${destination_id}`)
+    console.log(`6. Get lane by origin: ${origin_id} and destination: ${destination_id}`);
         let promise2 = new Promise((resolve) => {   
             Lane.findOne({ where: {origin_location_id: origin_id, destination_location_id: destination_id} })
         .then(res => {
                 if (res != null) {
-                    console.log(`   Found ${res.description}`)
-                    resolve(res)
+                    console.log(`   Found ${res.description}`);
+                    resolve(res);
                 }
+            }).catch(err => {
+                console.log(err);
+                reject(err);
             });
         });
 
     const lane = await promise2;
     
-    const ratedDistance = await getRatedDistance(lane, distance_traveled);
+    const ratedDistance = await getRatedDistance(lane, distance_traveled, function(err) {
+        console.log(err);
+    });
     
-    console.log(`7. Get rate rule by rated distance: ${ratedDistance}`)
+    console.log(`7. Get rate rule by rated distance: ${ratedDistance}`);
     let promise3 = new Promise((resolve) => {
         let rDistance = ratedDistance * 1609.344;
         sequelize.query(`SELECT * FROM rate_rule WHERE customer_id = ${customer_id} AND distance_start <= ${rDistance} AND distance_end >= ${rDistance} LIMIT 1`)
-
         .then(res => {
+            console.log("Found rates record");
             resolve(res[0][0]);
-        })
-        
+        }).catch(err => {
+            console.log(err);
+            reject(err);
+        });
     });
 
     const rule = await promise3;
 
-    
-    console.log(`8. Calculating the price`)
-    let price = await getPrice(rule.type, rule.rate, ratedDistance)
-    console.log(`   price $${price}`)
+    console.log(`8. Calculating the price`);
+    let price = await getPrice(rule.type, rule.rate, ratedDistance, function(err) {
+        console.log(err);
+    });
+    console.log(`   Price: $${price}`);
   
-
-    
-    console.log(`9. Creating the rating output record.`)
+    console.log(`9. Creating the rating output record.`);
     await RateOutput.create({
         customer_id: customer_id,
         move_id: message.d_pickup_delivery_relationship,
@@ -153,20 +163,20 @@ async function getRateRules(message, customer_id, distance_traveled) {
   }
 }
 
-function getPrice(type, rate, distance) {
+function getPrice(type, rate, distance, cb) {
     if (type == 'per') {
         return rate * distance;
-    }else{
+    } else {
         return rate;
     }
-}
+};
 
-function getRatedDistance(lane, distance) {
+function getRatedDistance(lane, distance, cb) {
     if (lane === null) {
         return distance;
-    }else{
+    } else {
         return (lane.distance/1609.344);
     }
-}
+};
 
 module.exports = {RatingEngine}
